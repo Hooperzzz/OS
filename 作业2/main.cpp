@@ -294,7 +294,7 @@ FileTree* getFileByPath(FileTree*filetree_ptr,string path){
     FileTree*current=filetree_ptr;
     Path_input*path_ptr=new Path_input;
     getFilePath(path,path_ptr);
-    if(path_ptr->childFile==NULL){
+    if(path_ptr->childFile==NULL||path_ptr->childFile->fileName!="HOME"){
         current=NULL;
     }else{
         path_ptr=path_ptr->childFile;    //第一个为HOME去掉
@@ -332,7 +332,9 @@ void printFilesByPath(FileTree*filetree_ptr,string path){
             my_print(message.c_str(),message.length(),0);
             cout<<endl;
         }else{
-            current=current->children;
+            if(path!="/HOME"){
+                current=current->children;
+            }
             while(current->neighbor!=NULL){
                 current=current->neighbor;
                 if(current->isFile){
@@ -344,6 +346,10 @@ void printFilesByPath(FileTree*filetree_ptr,string path){
         }
         cout<<endl;
         }
+    }
+    else{
+        string message="Cannot find file!";
+        my_print(message.c_str(),message.length(),0);
     }
 }
 void catFileContextByPath(FileTree*filetree_ptr,string path){
@@ -375,7 +381,11 @@ void countFilesByPath(FileTree*filetree_ptr,string path){
         my_print(message.c_str(),message.length(),0);
     }
     else{
-        printCountResult(current,"","HOUSE");
+        if(path=="/HOME"){
+            printCountResult(current,"","HOME");
+        }else{
+            printCountResult(current->children,"",current->fileName);
+        }
     }
 }
 void printCountResult(FileTree*fileTree,string head_space,string parentName){
