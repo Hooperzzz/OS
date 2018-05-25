@@ -25,6 +25,11 @@ typedef struct s_console
 #define SCREEN_WIDTH		80
 
 #define DEFAULT_CHAR_COLOR	0x07	/* 0000 0111 黑底白字 */
+#define ESC_CHAR_COLOR 0x05  /* 0000 0101 黑底洋红字 */
+#define SPECIAL_CHAR_COLOR 0x00  /* 0000 0000 黑底黑字 */
+#define TEST_COLOR 0x01
+#define CURSOR_COLOR 0x87
 
 
 #endif /* _ORANGES_CONSOLE_H_ */
+

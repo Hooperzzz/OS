@@ -1,9 +1,9 @@
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            global.h
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                                    Forrest Yu, 2005
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+ global.h
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ Forrest Yu, 2005
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 /* EXTERN is defined as extern except in global.c */
 #ifdef	GLOBAL_VARIABLES_HERE
@@ -26,12 +26,14 @@ EXTERN	PROCESS*	p_proc_ready;
 
 EXTERN	int		nr_current_console;
 
+EXTERN int is_esc_mode;
+
 extern	PROCESS		proc_table[];
 extern	char		task_stack[];
 extern  TASK            task_table[];
-extern  TASK            user_proc_table[];
 extern	irq_handler	irq_table[];
 extern	TTY		tty_table[];
 extern  CONSOLE         console_table[];
+
 
 

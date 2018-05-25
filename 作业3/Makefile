@@ -17,8 +17,8 @@ CC		= gcc
 LD		= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -f elf
-CFLAGS		= -I include/ -c -fno-builtin -m32 -fno-stack-protector
-LDFLAGS		= -s -Ttext $(ENTRYPOINT) -melf_i386
+CFLAGS		= -I include/ -c -fno-builtin  -fno-stack-protector
+LDFLAGS		= -s -Ttext $(ENTRYPOINT)
 DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
 # This Program
@@ -42,6 +42,9 @@ everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 all : realclean everything
 
 image : realclean everything clean buildimg
+
+run: image
+	bochs
 
 clean :
 	rm -f $(OBJS)
