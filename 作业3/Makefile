@@ -17,8 +17,8 @@ CC		= gcc
 LD		= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -f elf
-CFLAGS		= -I include/ -c -fno-builtin  -fno-stack-protector
-LDFLAGS		= -s -Ttext $(ENTRYPOINT)
+CFLAGS		= -I include/ -c -fno-builtin -m32 -fno-stack-protector
+LDFLAGS		= -s -Ttext $(ENTRYPOINT) -melf_i386
 DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
 # This Program
@@ -43,7 +43,7 @@ all : realclean everything
 
 image : realclean everything clean buildimg
 
-run: image
+run: image 
 	bochs
 
 clean :
