@@ -39,6 +39,7 @@ PUBLIC void clock_handler(int irq)
             clean_screen(console_table);
             count=0;
         }
+        count++;
 
 	if (k_reenter != 0) {
 		return;

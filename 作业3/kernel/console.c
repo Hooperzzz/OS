@@ -79,7 +79,7 @@ PUBLIC int is_current_console(CONSOLE* p_con)
 PUBLIC void out_char(CONSOLE* p_con, char ch)
 {
 	u8* p_vmem = (u8*)(V_MEM_BASE + p_con->cursor * 2);
-
+        int temp_loc=0;
 	switch(ch) {
 	case '\n':
                 if(is_esc_mode){
@@ -121,14 +121,47 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
                 }
 		break;
 	case '\b':
-		if (p_con->cursor > p_con->original_addr) {
-			p_con->cursor--;
-			*(p_vmem-2) = ' ';
-			*(p_vmem-1) = DEFAULT_CHAR_COLOR;
-		}
+                if(!is_esc_and_enter){
+		    if (p_con->cursor > p_con->original_addr) {
+                      if(*(p_vmem-2)=='\0'&&*(p_vmem-1)==DEFAULT_CHAR_COLOR){ 
+                       while(*(p_vmem-2)=='\0'&&*(p_vmem-1)==DEFAULT_CHAR_COLOR){
+                               p_con->cursor--;
+                               if(p_con->cursor==p_con->original_addr + SCREEN_WIDTH * 
+				((p_con->cursor - p_con->original_addr) /
+				 SCREEN_WIDTH))
+                                 break;
+                               p_vmem=p_vmem-2;
+                          }
+                        }
+                       else if(*(p_vmem-2)==' '&&*(p_vmem-1)==ESC_CHAR_COLOR){
+                           int temp_limit=4;
+                       while(*(p_vmem-2)==' '&&*(p_vmem-1)==ESC_CHAR_COLOR&&temp_limit>0){
+                           p_con->cursor--;
+                           *(p_vmem-2)='\0';
+                           *(p_vmem-1)=DEFAULT_CHAR_COLOR;
+                           p_vmem=p_vmem-2;
+                           temp_limit=temp_limit-1;
+                         }
+                       }
+                       else{
+			  p_con->cursor--;
+			  *(p_vmem-2) = '\0';
+			  *(p_vmem-1) = DEFAULT_CHAR_COLOR;
+		       }
+                  }
+               }
 		break;
         case '\t':
-                
+                if(!is_esc_and_enter){
+                temp_loc=8-((unsigned int)p_vmem)%8;
+                while(temp_loc!=0){
+                    p_con->cursor++;
+                    *p_vmem=' ';
+                    *(p_vmem+1)=ESC_CHAR_COLOR;
+                    p_vmem=p_vmem+2;
+                    temp_loc=temp_loc-2;
+                }
+                }
                 break;
         case '\e':
                 if(!is_esc_mode){
@@ -186,7 +219,7 @@ PUBLIC void clean_screen(CONSOLE* p_con){
     while(p_con->cursor>p_con->original_addr){
         p_vmem=(u8*)(V_MEM_BASE+p_con->cursor*2);
         p_con->cursor--;
-	*(p_vmem-2) = ' ';
+	*(p_vmem-2) = '\0';
 	*(p_vmem-1) = DEFAULT_CHAR_COLOR;
     }
     p_con->cursor=p_con->original_addr;
