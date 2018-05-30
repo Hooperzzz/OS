@@ -152,7 +152,7 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
                }
 		break;
         case '\t':
-                if(!is_esc_and_enter){
+                if(!is_esc_and_enter&&!is_esc_mode){
                 temp_loc=8-((unsigned int)p_vmem)%8;
                 while(temp_loc!=0){
                     p_con->cursor++;
@@ -175,13 +175,17 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
                  
                          while(p_vmem>esc_mode_ptr){
                              p_vmem=(u8*)(V_MEM_BASE + p_con->cursor * 2);
-                             *(p_vmem)=' ';
+                             *(p_vmem)='\0';
                              *(p_vmem+1)= DEFAULT_CHAR_COLOR;
                              p_con->cursor--;
                         }
                          p_con->cursor++;
                          u8* temp_mem_ptr=(u8*)(V_MEM_BASE+p_con->original_addr*2);
                          while(temp_mem_ptr<p_vmem){
+                             if(*(temp_mem_ptr)==' '&&*(temp_mem_ptr+1)==ESC_CHAR_COLOR){
+                                    temp_mem_ptr=temp_mem_ptr+2;
+                                    continue;
+                              }
                              *(temp_mem_ptr+1)= DEFAULT_CHAR_COLOR;
                              temp_mem_ptr=temp_mem_ptr+2;
                          }
