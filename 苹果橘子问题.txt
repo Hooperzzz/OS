@@ -1,0 +1,67 @@
+TYPE Orange-Apple=MONITOR
+var plate : array[0...N] of (orange, apple, empty) ; apple_count, orange_count: integer;
+      S_parent, S_son, S_daughter : semaphore;
+      SP_count, SS_count, SD_count: integer;
+define  put,   get;
+use    wait,    signal;
+
+begin    for i:=0 to N  do   plate[i]:=empty;   apple_count:=0  orange_count:=0 end;
+
+procedure  put(fruit : orange, apple);
+begin
+     if  (apple_count+orange_count)=N then wait(S_parent, SP_count, IM)
+     for i:=0 to N  do
+         if  plate[i] = empty  then
+                plate[i]:=fruit;
+                break;
+    if  fruit=apple then 
+        apple_count=apple_count+1;
+        signal(S_daughter,SD_count,IM);
+    else   
+        orange_count=orange_count+1;
+        signal(S_son,SS_count,IM);
+end;
+
+procedure get(fruit: orange, apple);
+begin
+    if fruit=orange and orange_count<>0  then  wait(S_son,SS_count,IM);
+    else if fruit=apple and apple_count<>0  then  wait(S_daughter,SD_count,IM);
+    for i:=0 to N do
+            if plate[i]=fruit
+                 plate[i]=empty
+                 break;
+     if  fruit=apple then 
+        apple_count=apple_count-1;
+    else   
+        orange_count=orange_count-1;
+    signal(S_parent, SP_count, IM);
+end;
+
+process daughter(){
+    count=0;
+    L: P(IM.mutex);
+    Orange-Apple.get(apple)
+    if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
+    eating();
+    count=count+1;
+    if count<2  then  goto L;
+}
+process son(){
+    count=0;
+    L: P(IM.mutex);
+    Orange-Apple.get(orange)
+    if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
+    eating();
+    count=count+1;
+    if count<2  then  goto L;
+}
+process father(){
+    P(IM.mutex);
+    Orange-Apple.put(apple)
+    if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
+}
+process mother(){
+    P(IM.mutex);
+    Orange-Apple.put(orange)
+    if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
+}
