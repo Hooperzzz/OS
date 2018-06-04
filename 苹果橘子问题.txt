@@ -24,8 +24,8 @@ end;
 
 procedure get(fruit: orange, apple);
 begin
-    if fruit=orange and orange_count<>0  then  wait(S_son,SS_count,IM);
-    else if fruit=apple and apple_count<>0  then  wait(S_daughter,SD_count,IM);
+    if fruit=orange and orange_count=0  then  wait(S_son,SS_count,IM);
+    else if fruit=apple and apple_count=0  then  wait(S_daughter,SD_count,IM);
     for i:=0 to N do
             if plate[i]=fruit
                  plate[i]=empty
@@ -38,30 +38,28 @@ begin
 end;
 
 process daughter(){
-    count=0;
     L: P(IM.mutex);
     Orange-Apple.get(apple)
     if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
     eating();
-    count=count+1;
-    if count<2  then  goto L;
+    goto L;
 }
 process son(){
-    count=0;
     L: P(IM.mutex);
     Orange-Apple.get(orange)
     if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
     eating();
-    count=count+1;
-    if count<2  then  goto L;
+    goto L;
 }
 process father(){
-    P(IM.mutex);
+    L:P(IM.mutex);
     Orange-Apple.put(apple)
     if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
+    goto L;
 }
 process mother(){
-    P(IM.mutex);
+    L:P(IM.mutex);
     Orange-Apple.put(orange)
     if IM.next_count>0 then V(IM.next);  else  V(IM.mutex);
+    goto L;
 }
