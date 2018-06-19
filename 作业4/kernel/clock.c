@@ -19,11 +19,23 @@
 /*======================================================================*
                            clock_handler
  *======================================================================*/
+
+PRIVATE int count;
+PRIVATE int is_start;
+
+
+
 PUBLIC void clock_handler(int irq)
 {
 	ticks++;
 	p_proc_ready->ticks--;
-  clear_screen();
+
+        if(is_start){
+            clean_screen(console_table);
+            is_start=0;
+        }
+        
+      
 
 	if (k_reenter != 0) {
 		return;
@@ -52,6 +64,8 @@ PUBLIC void milli_delay(int milli_sec)
  *======================================================================*/
 PUBLIC void init_clock()
 {
+        count=0;
+        is_start=1;
         /* 初始化 8253 PIT */
         out_byte(TIMER_MODE, RATE_GENERATOR);
         out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );

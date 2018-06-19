@@ -40,11 +40,9 @@ typedef struct s_proc {
 	u32 pid;                   /* process id passed in from MM */
 	char p_name[16];           /* name of the process */
 
-    //new 
-    int sleep_ticks; //sleep time
-	int wait; //1 is waiting
-	struct s_proc* next //next proc
-
+        int  sleep_ticks;
+        int  is_wait;     //1 is waiting
+        struct s_proc* next  //next proc
 }PROCESS;
 
 typedef struct s_task {
@@ -53,25 +51,28 @@ typedef struct s_task {
 	char	name[32];
 }TASK;
 
-//semaphore
-typedef struct semaphore {
-	int value;
-	PROCESS* queue
+typedef struct semaphore{
+    int value;
+    PROCESS* queue;
 }SEMAPHORE;
 
-/* Number of tasks */
-#define NR_TASKS	5
+
+/* Number of tasks & procs */
+#define NR_TASKS	1
+#define NR_PROCS	5
 
 /* stacks of tasks */
 #define STACK_SIZE_TTY		0x8000
-#define STACK_SIZE_Barber	0x8000
-#define STACK_SIZE_Customer_A	0x8000
-#define STACK_SIZE_Customer_B	0x8000
-#define STACK_SIZE_Customer_C   0x8000
+#define STACK_SIZE_TESTA	0x8000
+#define STACK_SIZE_TESTB	0x8000
+#define STACK_SIZE_TESTC	0x8000
+#define STACK_SIZE_TESTD        0x8000
+#define STACK_SIZE_TESTE        0x8000
 
 #define STACK_SIZE_TOTAL	(STACK_SIZE_TTY + \
-				STACK_SIZE_Barber + \
-				STACK_SIZE_Customer_A + \
-				STACK_SIZE_Customer_B + \
-				STACK_SIZE_Customer_C)
+				STACK_SIZE_TESTA + \
+				STACK_SIZE_TESTB + \
+				STACK_SIZE_TESTC + \
+                                STACK_SIZE_TESTD + \
+                                STACK_SIZE_TESTE)
 

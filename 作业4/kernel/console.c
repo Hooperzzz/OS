@@ -26,15 +26,14 @@ PRIVATE void set_cursor(unsigned int position);
 PRIVATE void set_video_start_addr(u32 addr);
 PRIVATE void flush(CONSOLE* p_con);
 
-PRIVATE int count;
-PRIVATE TTY* current_tty;
+
+PRIVATE int is_esc_and_enter;
+PRIVATE u8* esc_mode_ptr;
 /*======================================================================*
 			   init_screen
  *======================================================================*/
 PUBLIC void init_screen(TTY* p_tty)
 {
-	count = 0;
-
 	int nr_tty = p_tty - tty_table;
 	p_tty->p_console = console_table + nr_tty;
 
@@ -53,21 +52,15 @@ PUBLIC void init_screen(TTY* p_tty)
 		p_tty->p_console->cursor = disp_pos / 2;
 		disp_pos = 0;
 	}
-
-	//use tty2
-	if (nr_tty == 1){
-        current_con = p_tty->p_console;
-        //use 0 to clear screen
-        u8* p_vmem = (u8*)(V_MEM_BASE + current_con->current_start_addr * 2);
-        for (int i = 0;i <current_con->v_mem_limit;i++){
-            *(p_vmem) = 0;
-            *(p_vmem + 1) = WHITE_COLOR;
-            p_vmem = p_vmem + 2;
-        }
-	current_tty = p_tty;
-    }
+	else {
+                
+		out_char(p_tty->p_console, nr_tty + '0');
+		out_char(p_tty->p_console, '#');
+	}
 
 	set_cursor(p_tty->p_console->cursor);
+        current_con=p_tty->p_console;
+        is_esc_and_enter=0;
 }
 
 
@@ -83,7 +76,7 @@ PUBLIC int is_current_console(CONSOLE* p_con)
 /*======================================================================*
 			   out_char
  *======================================================================*/
-PUBLIC void out_char(CONSOLE* p_con, char ch, char color)
+PUBLIC void out_char_color(CONSOLE* p_con, char ch, char color)
 {
 	u8* p_vmem = (u8*)(V_MEM_BASE + p_con->cursor * 2);
 
@@ -119,6 +112,164 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, char color)
 
 	flush(p_con);
 }
+
+
+PUBLIC void out_char(CONSOLE* p_con, char ch)
+{
+	u8* p_vmem = (u8*)(V_MEM_BASE + p_con->cursor * 2);
+        int temp_loc=0;
+	switch(ch) {
+	case '\n':
+                if(is_esc_mode){
+                       is_esc_and_enter=1;
+                       int length=(p_vmem-esc_mode_ptr)/2;
+                       u8* head=(u8*)(V_MEM_BASE + p_con->original_addr * 2);
+                       while(head<esc_mode_ptr){
+                           int is_match=1;
+                           int temp_count=0;
+                           u8* temp=head;
+                           while(temp_count<length){
+                               if(*temp!=*(esc_mode_ptr+temp_count*2)){
+                                    is_match=0;
+                                    break;
+                                }
+                                temp_count++;
+                                temp=temp+2;
+                           }
+                           temp=head;
+                           temp_count=0;
+                           if(is_match){
+                           while(temp_count<length){
+                                *(temp+1)=ESC_CHAR_COLOR;
+                                temp_count++;  
+                                temp=temp+2;
+                           }
+                          }
+                           head=head+2;
+                       }
+                       
+                       
+                }else{
+		if (p_con->cursor < p_con->original_addr +
+		    p_con->v_mem_limit - SCREEN_WIDTH) {
+			p_con->cursor = p_con->original_addr + SCREEN_WIDTH * 
+				((p_con->cursor - p_con->original_addr) /
+				 SCREEN_WIDTH + 1);
+		}
+                }
+		break;
+	case '\b':
+                if(!is_esc_and_enter){
+		    if (p_con->cursor > p_con->original_addr) {
+                      if(*(p_vmem-2)=='\0'&&*(p_vmem-1)==DEFAULT_CHAR_COLOR){ 
+                       while(*(p_vmem-2)=='\0'&&*(p_vmem-1)==DEFAULT_CHAR_COLOR){
+                               p_con->cursor--;
+                               if(p_con->cursor==p_con->original_addr + SCREEN_WIDTH * 
+				((p_con->cursor - p_con->original_addr) /
+				 SCREEN_WIDTH))
+                                 break;
+                               p_vmem=p_vmem-2;
+                          }
+                        }
+                       else if(*(p_vmem-2)==' '&&*(p_vmem-1)==ESC_CHAR_COLOR){
+                           int temp_limit=4;
+                       while(*(p_vmem-2)==' '&&*(p_vmem-1)==ESC_CHAR_COLOR&&temp_limit>0){
+                           p_con->cursor--;
+                           *(p_vmem-2)='\0';
+                           *(p_vmem-1)=DEFAULT_CHAR_COLOR;
+                           p_vmem=p_vmem-2;
+                           temp_limit=temp_limit-1;
+                         }
+                       }
+                       else{
+			  p_con->cursor--;
+			  *(p_vmem-2) = '\0';
+			  *(p_vmem-1) = DEFAULT_CHAR_COLOR;
+		       }
+                  }
+               }
+		break;
+        case '\t':
+                if(!is_esc_and_enter&&!is_esc_mode){
+                temp_loc=8-((unsigned int)p_vmem)%8;
+                while(temp_loc!=0){
+                    p_con->cursor++;
+                    *p_vmem=' ';
+                    *(p_vmem+1)=ESC_CHAR_COLOR;
+                    p_vmem=p_vmem+2;
+                    temp_loc=temp_loc-2;
+                }
+                }
+                break;
+        case '\e':
+                if(!is_esc_mode){
+                      is_esc_mode=1;
+                      esc_mode_ptr=(u8*)(V_MEM_BASE+p_con->cursor*2);
+                }
+                else{
+                     if(is_esc_and_enter){
+                         is_esc_mode=0;
+                         is_esc_and_enter=0;
+                 
+                         while(p_vmem>esc_mode_ptr){
+                             p_vmem=(u8*)(V_MEM_BASE + p_con->cursor * 2);
+                             *(p_vmem)='\0';
+                             *(p_vmem+1)= DEFAULT_CHAR_COLOR;
+                             p_con->cursor--;
+                        }
+                         p_con->cursor++;
+                         u8* temp_mem_ptr=(u8*)(V_MEM_BASE+p_con->original_addr*2);
+                         while(temp_mem_ptr<p_vmem){
+                             if(*(temp_mem_ptr)==' '&&*(temp_mem_ptr+1)==ESC_CHAR_COLOR){
+                                    temp_mem_ptr=temp_mem_ptr+2;
+                                    continue;
+                              }
+                             *(temp_mem_ptr+1)= DEFAULT_CHAR_COLOR;
+                             temp_mem_ptr=temp_mem_ptr+2;
+                         }
+                        
+                     }                
+                }  
+                break;
+	default:
+                if(!is_esc_and_enter){
+		if (p_con->cursor <
+		    p_con->original_addr + p_con->v_mem_limit - 1) {
+			*p_vmem++ = ch;
+                        if(!is_esc_mode){
+			*p_vmem++ = DEFAULT_CHAR_COLOR;}
+                        else{ *p_vmem++ = ESC_CHAR_COLOR;}
+			p_con->cursor++;
+		}
+                }
+		break;
+	}
+
+	while (p_con->cursor >= p_con->current_start_addr + SCREEN_SIZE) {
+		scroll_screen(p_con, SCR_DN);
+	}
+
+	flush(p_con);
+}
+
+/*======================================================================*
+                           clean_screen
+*======================================================================*/
+PUBLIC void clean_screen(CONSOLE* p_con){
+    u8* p_vmem;
+
+    while(p_con->cursor>p_con->original_addr){
+        p_vmem=(u8*)(V_MEM_BASE+p_con->cursor*2);
+        p_con->cursor--;
+	*(p_vmem-2) = '\0';
+	*(p_vmem-1) = DEFAULT_CHAR_COLOR;
+    }
+    p_con->cursor=p_con->original_addr;
+    p_con->current_start_addr=p_con->original_addr;
+    flush(p_con);
+    
+}
+
 
 /*======================================================================*
                            flush
@@ -202,14 +353,3 @@ PUBLIC void scroll_screen(CONSOLE* p_con, int direction)
 	set_cursor(p_con->cursor);
 }
 
-
-PUBLIC void clear_screen(){
-    count++;
-    int time_to_clean = 15; 
-    
-    if(count == time_to_clean * 1000){
-	//清屏
-        init_screen(current_tty);
-        count = 0;
-    }
-}

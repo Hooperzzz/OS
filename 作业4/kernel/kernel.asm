@@ -343,10 +343,8 @@ sys_call:
 
         sti
 
-        push 	dword[esi + EBXREG - P_STACKBASE]
         call    [sys_call_table + eax * 4]
         mov     [esi + EAXREG - P_STACKBASE], eax
-        pop     dword[esi + EBXREG - P_STACKBASE]
 
         cli
 
