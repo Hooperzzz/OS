@@ -343,8 +343,10 @@ sys_call:
 
         sti
 
+        push 	dword[esi + EBXREG - P_STACKBASE]
         call    [sys_call_table + eax * 4]
         mov     [esi + EAXREG - P_STACKBASE], eax
+        pop     dword[esi + EBXREG - P_STACKBASE]
 
         cli
 
@@ -352,11 +354,11 @@ sys_call:
 
 
 ; ====================================================================================
-;				    restart
+;                                   restart
 ; ====================================================================================
 restart:
 	mov	esp, [p_proc_ready]
-	lldt	[esp + P_LDT_SEL]
+	lldt	[esp + P_LDT_SEL] 
 	lea	eax, [esp + P_STACKTOP]
 	mov	dword [tss + TSS3_S_SP0], eax
 restart_reenter:

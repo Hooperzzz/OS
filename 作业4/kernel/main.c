@@ -8,10 +8,12 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "proto.h"
 #include "string.h"
 #include "proc.h"
+#include "tty.h"
+#include "console.h"
 #include "global.h"
+#include "proto.h"
 
 
 /*======================================================================*
@@ -61,22 +63,31 @@ PUBLIC int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-	proc_table[0].ticks = proc_table[0].priority = 15;
-	proc_table[1].ticks = proc_table[1].priority =  5;
-	proc_table[2].ticks = proc_table[2].priority =  3;
+	proc_table[0].ticks = proc_table[0].priority = 1;
+	proc_table[1].ticks = proc_table[1].priority = 1;
+	proc_table[2].ticks = proc_table[2].priority = 1;
+	proc_table[3].ticks = proc_table[3].priority = 1;
+	proc_table[4].ticks = proc_table[4].priority = 1;
+
+	proc_table[0].wait = proc_table[0].sleep_ticks = 0;
+	proc_table[1].wait = proc_table[1].sleep_ticks = 0;
+	proc_table[2].wait = proc_table[2].sleep_ticks = 0;
+	proc_table[3].wait = proc_table[3].sleep_ticks = 0;
+	proc_table[4].wait = proc_table[4].sleep_ticks = 0;
+
+	proc_table[0].next = 0;
+    proc_table[1].next = 0;
+	proc_table[2].next = 0;
+	proc_table[3].next = 0;
+	proc_table[4].next = 0;
 
 	k_reenter = 0;
 	ticks = 0;
 
 	p_proc_ready	= proc_table;
 
-        /* 初始化 8253 PIT */
-        out_byte(TIMER_MODE, RATE_GENERATOR);
-        out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );
-        out_byte(TIMER0, (u8) ((TIMER_FREQ/HZ) >> 8));
-
-        put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
-        enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */
+	init_clock();
+    init_keyboard();
 
 	restart();
 
@@ -84,37 +95,43 @@ PUBLIC int kernel_main()
 }
 
 /*======================================================================*
-                               TestA
+                               Barber
  *======================================================================*/
-void TestA()
+void Barber()
 {
-	int i = 0;
-	while (1) {
-		disp_str("A.");
-		milli_delay(10);
+	init();
+	barber();
+}
+
+/*======================================================================*
+                               Customer_A
+ *======================================================================*/
+void Customer_A()
+{
+	while(1){
+	customers("A");
+	system_process_sleep(10000);
 	}
 }
 
 /*======================================================================*
-                               TestB
+                               Customer_B
  *======================================================================*/
-void TestB()
+void Customer_B()
 {
-	int i = 0x1000;
 	while(1){
-		disp_str("B.");
-		milli_delay(10);
+	customers("B");
+	system_process_sleep(10000);
 	}
 }
 
 /*======================================================================*
-                               TestB
+                               Customer_C
  *======================================================================*/
-void TestC()
+void Customer_C()
 {
-	int i = 0x2000;
 	while(1){
-		disp_str("C.");
-		milli_delay(10);
+	customers("C");
+	system_process_sleep(10000);
 	}
 }
