@@ -42,7 +42,7 @@ PUBLIC void schedule()
 
 	while (!greatest_ticks) {
 		for (p = proc_table; p < proc_table+NR_TASKS; p++) {
-			if (p -> is_wait || p -> sleep_ticks){
+			if (p -> wait || p -> sleep_ticks){
 				continue;
 			}
 
@@ -54,7 +54,7 @@ PUBLIC void schedule()
 
 		if (!greatest_ticks) {
 			for (p = proc_table; p < proc_table+NR_TASKS; p++) {
-				if (p -> is_wait || p -> sleep_ticks){
+				if (p -> wait || p -> sleep_ticks){
 					continue;
 				}
 				p->ticks = p->priority;
@@ -85,10 +85,13 @@ PUBLIC int sys_process_sleep(int milli_sec){
                            sys_disp_str
  *======================================================================*/
 PUBLIC int sys_disp_str(char* str){
+	//choose color for each process
 	char color = colors[p_proc_ready - proc_table - 1];
+
+	//output str
 	char* temp = str;
     while (*temp != 0){
-        out_char_color(current_con, *temp, color);
+        out_char(current_con, *temp, color);
         temp++;
     }
 
@@ -96,12 +99,13 @@ PUBLIC int sys_disp_str(char* str){
 }
 
 /*======================================================================*
-                           sys_sem_p
+                           sys_P
  *======================================================================*/
-PUBLIC int sys_sem_p(SEMAPHORE* s){
+PUBLIC int sys_P(SEMAPHORE* s){
 	s->value--;
 	if(s->value < 0){
-		p_proc_ready->is_wait = 1;
+		//sleep process
+		p_proc_ready->wait = 1;
 		if(s -> queue == 0){
 			s->queue = p_proc_ready;
 		}
@@ -112,15 +116,16 @@ PUBLIC int sys_sem_p(SEMAPHORE* s){
 			}
 			rear->next = p_proc_ready;
 		}
+		//
 		schedule();
 	}
 	return 0;
 }
 
 /*======================================================================*
-                           sys_sem_v
+                           sys_V
  *======================================================================*/
-PUBLIC int sys_sem_v(SEMAPHORE* s){
+PUBLIC int sys_V(SEMAPHORE* s){
 	s->value++;
 	if(s->value <= 0){
 		//wake up process
@@ -128,7 +133,7 @@ PUBLIC int sys_sem_v(SEMAPHORE* s){
 		
 		s->queue = s-> queue -> next;
 		p_proc_ready->next = 0;
-		p_proc_ready->is_wait = 0;
+		p_proc_ready->wait = 0;
 		
 	}
 	return 0;
@@ -149,19 +154,19 @@ PUBLIC void init(){
  *======================================================================*/
 PUBLIC void barber(){
 	while(1){
-		disp_str("Barber is sleeping\n");
+		system_disp_str("Barber is sleeping\n");
 
-		sem_p(first_semaphore);
-		sem_p(first_semaphore + 2);
+		system_P(first_semaphore);
+		system_P(first_semaphore + 2);
 		waiting--;
-		sem_v(first_semaphore + 1);
-		sem_v(first_semaphore + 2);
+		system_V(first_semaphore + 1);
+		system_V(first_semaphore + 2);
 
-		process_sleep(20000);
-		disp_str_s("Barber finished cutting for ");
+		system_process_sleep(20000);
+		system_disp_str("Barber finished cutting for ");
 		itoa(buffer, now);
-		disp_str_s(buffer);
-		disp_str_s(" customer\n");
+		system_disp_str(buffer);
+		system_disp_str(" customer\n");
 	}
 }
 
@@ -169,39 +174,41 @@ PUBLIC void barber(){
                            customers
  *======================================================================*/
 PUBLIC void customers(char* name){
-	sem_p(first_semaphore + 2);
+	system_P(first_semaphore + 2);
 	ID++;
 	int count = ID;
-	disp_str("Customer ");
+	system_disp_str("Customer ");
 	itoa(buffer, count);
-	disp_str(buffer);
-	disp_str(" come. ");
+	system_disp_str(buffer);
+	system_disp_str(" come. ");
 	itoa(buffer, waiting);
-	disp_str(buffer);
-	disp_str(" people waiting\n");
+	system_disp_str(buffer);
+	system_disp_str(" people waiting\n");
 	if(waiting < chairs){
-		disp_str("Customer ");
+		system_disp_str("Customer ");
 		itoa(buffer, count);
-		disp_str(buffer);
-		disp_str(" waiting \n");
+		system_disp_str(buffer);
+		system_disp_str(" waiting \n");
 
 		waiting++;
-		sem_v(first_semaphore);
-		sem_v(first_semaphore + 2);
-		sem_p(first_semaphore + 1);
+		system_V(first_semaphore);
+		system_V(first_semaphore + 2);
+		system_P(first_semaphore + 1);
 
-		disp_str("Customer ");
+		system_disp_str("Customer ");
 		itoa(buffer, count);
-		disp_str(buffer);
-		disp_str(" get hair cut\n");
+		system_disp_str(buffer);
+		system_disp_str(" get hair cut\n");
 		now = count;
 	}
 	else{
-		sem_v(first_semaphore + 2);
+		system_V(first_semaphore + 2);
 
-		disp_str("Customer ");
+		system_disp_str("Customer ");
 		itoa(buffer, count);
-		disp_str(buffer);
-		disp_str(" leave\n");
+		system_disp_str(buffer);
+		system_disp_str(" leave\n");
 	}
 }
+
+

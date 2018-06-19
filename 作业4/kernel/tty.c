@@ -36,7 +36,7 @@ PUBLIC void task_tty()
 	for (p_tty=TTY_FIRST;p_tty<TTY_END;p_tty++) {
 		init_tty(p_tty);
 	}
-	select_console(0);
+	select_console(1);
 	while (1) {
 		for (p_tty=TTY_FIRST;p_tty<TTY_END;p_tty++) {
 			tty_do_read(p_tty);
@@ -53,7 +53,6 @@ PRIVATE void init_tty(TTY* p_tty)
 	p_tty->inbuf_count = 0;
 	p_tty->p_inbuf_head = p_tty->p_inbuf_tail = p_tty->in_buf;
 
-        is_esc_mode=0;
 	init_screen(p_tty);
 }
 
@@ -76,12 +75,6 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                 case BACKSPACE:
 			put_key(p_tty, '\b');
 			break;
-                case TAB:
-                        put_key(p_tty, '\t');
-                        break;
-                case ESC:
-                        put_key(p_tty, '\e');
-                        break;
                 case UP:
                         if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
 				scroll_screen(p_tty->p_console, SCR_DN);
@@ -155,7 +148,7 @@ PRIVATE void tty_do_write(TTY* p_tty)
 		}
 		p_tty->inbuf_count--;
 
-		out_char(p_tty->p_console, ch);
+		out_char(p_tty->p_console, ch, WHITE_COLOR);
 	}
 }
 
